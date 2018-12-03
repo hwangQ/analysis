@@ -121,10 +121,10 @@ saveRDS(csee_anal1, file=file.path(dir_out, "csee_anal1.rds"))
 # Analytical evaluation 2: using Park et al. (2017)
 # find points where adjacent two primary routes intercet  
 if(n.stage == 2) {
-  x <- eos_list$df_path$stage2[c(1, 4, 7)]
+  x <- eos_list$df_path$stage2[c(1, 2, 3)]
 } 
 if(n.stage == 3){
-  x <- eos_list$df_path$stage3[c(1, 2, 3)]
+  x <- eos_list$df_path$stage3[c(1, 4, 7)]
 }
 cuts <- cross_info(x, RDP=c(-.44, .44), range.theta=range.theta, D, interval=c(-2, 2))$cut.score
 
