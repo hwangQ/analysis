@@ -84,7 +84,6 @@ csee_anal1 <- readRDS(file.path(dir_out1, "csee_anal1.rds"))
 ##----------------------------------------------------------------------------
 # Analytical evaluation 2: using Park et al. (2017)
 # read results
-info_MST <- readRDS(file.path(dir_out1, "info_MST.rds"))
 csee_anal2 <- readRDS(file.path(dir_out1, "csee_anal2.rds"))
 
 ##----------------------------------------------------------------------------
