@@ -1,3 +1,31 @@
+# This function finds theta values for each targeted subpopulations
+subpop <- function(post, n.stage) {
+  
+  if(n.stage ==2) {
+    thetas <- list()
+    for(i in 1:(length(post) - 1)) {
+      thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)
+    }
+  }
+  
+  if(n.stage == 3) {
+    med <- NA
+    for(i in 1:(length(post) - 1)) {
+      med[i] <- median(c(post[i], post[i + 1]))
+    }
+    post2 <- sort(c(post, med))
+    thetas <- list()
+    for(i in 1:(length(post2) - 2)) {
+      thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)
+    }
+  }
+  
+  # return results
+  names(thetas) <- paste0("g", 1:length(thetas))
+  thetas
+  
+}
+
 # This function creates a matrix of cutoff scores used for routing
 cutoff_mat <- function(cut.score, n.stage, n.module) {
   
