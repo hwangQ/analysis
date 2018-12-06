@@ -38,85 +38,87 @@ est_eos <- function(x, pathway, ...) {
 # a function to convert raw scores to equated observed scores
 
 convert_eos <- function(x, D=1, range.theta=c(-5, 5), intpo=TRUE, constraint=TRUE, lower=-10, upper=10) { 
-
-	prm_list <- paramList(x)
-
-	##########################################
-	## Equip all information
-	any.dc <- any(length(prm_list$dicho.item$id) > 0) # if there are dichotomous items
-	any.py <- any(length(prm_list$poly.item$id) > 0) # if there are polytomous items
-
-	# Find a maximum raw score
-	max.score <- 0
-	if(any.dc) {
-		max.score <- sum(max.score, length(prm_list$dicho.item$a))
-	}
-	if(any.py) {
-		sum.score <- prm_list$poly.item$score.cats - 1
-		max.score <- sum(max.score, sum.score)
-	}
-	
-	# Find a minimum raw score
-	if(any.dc) {
-		g <- prm_list$dicho.item$g
-		min.g <- sum(g)
-		min.score <- ifelse(min.g != 0, ceiling(min.g), 1)
-	} else {
-		min.score <- 1
-	}
-	
-	##########################################
-	## Condunct 3 steps of TSE 
-	# 1) Find the range of raw scores
-	scores <- seq(min.score, max.score, 1)
-	
-	# 2) Find the theta values correspoding to the raw scores 
-	theta <- sapply(scores, raw2theta, df.scaled=x, D=D, lower=lower, upper=upper)
-	if(constraint) {
-		theta <- ifelse(theta < range.theta[1], range.theta[1], theta)
-		theta <- ifelse(theta > range.theta[2], range.theta[2], theta)
-	}
-
-	# Create conversion table
-	if(intpo) {
-	
-		if(min.score > 1) {
-			lessg.score <- 0:(min.score-1)
-			
-			# calculate slope and intercept for linear interpolation
-			if(range.theta[1] > theta[1]) stop(paste0("A lower limit of theta is greater than a minimum theta value of ", 
-			                                   round(theta[1], 3), " corresponding to the minimum raw score. Use the different a range of theta."))
-			if(range.theta[2] < tail(theta, 1)) stop(paste0("A upper limit of theta is less than a maximum theta value of ", 
-			                                         round(tail(theta, 1), 3), " corresponding to the maximum raw score. Use the different a range of theta."))
-			slope <- scores[1] / (theta[1] - range.theta[1])
-			intercept <- - slope * range.theta[1]
-			lessg.theta <- (lessg.score - intercept) / slope
-			
-			theta <- c(lessg.theta, theta)
-			scale.table <- data.frame(score=0:max.score, theta=theta)
-		} else {
-			if(range.theta[1] > theta[1]) stop(paste0("A lower limit of theta is greater than a minimum theta value of ", 
-			                                   round(theta[1], 3), " corresponding to the minimum raw score. Use the different a range of theta."))
-			if(range.theta[2] < tail(theta, 1)) stop(paste0("A upper limit of theta is less than a maximum theta value of ", 
-			                                         round(tail(theta, 1), 3), " corresponding to the maximum raw score. Use the different a range of theta."))
-			theta <- c(range.theta[1], theta)
-			scale.table <- data.frame(score=0:max.score, theta=theta)
-		}
-	
-	} else {
-
-		if(min.score_new > 1) {
-			lessg.score <- 0:(min.score-1)
-			lessg.theta <- rep(NA, length(lessg.score))
-			scale.table <- data.frame(score=0:max.score, theta=c(lessg.theta, theta))
-		} else {
-			scale.table <- data.frame(score=0:max.score, theta=c(NA, theta))
-		}
-	
-	}
-	
-	scale.table
-
+  
+  prm_list <- paramList(x)
+  
+  ##########################################
+  ## Equip all information
+  any.dc <- any(length(prm_list$dicho.item$id) > 0) # if there are dichotomous items
+  any.py <- any(length(prm_list$poly.item$id) > 0) # if there are polytomous items
+  
+  # Find a maximum raw score
+  max.score <- 0
+  if(any.dc) {
+    max.score <- sum(max.score, length(prm_list$dicho.item$a))
+  }
+  if(any.py) {
+    sum.score <- prm_list$poly.item$score.cats - 1
+    max.score <- sum(max.score, sum.score)
+  }
+  
+  # Find a minimum raw score
+  if(any.dc) {
+    g <- prm_list$dicho.item$g
+    min.g <- sum(g)
+    min.score <- ifelse(min.g != 0, ceiling(min.g), 1)
+  } else {
+    min.score <- 1
+  }
+  
+  ##########################################
+  ## Condunct 3 steps of TSE 
+  # 1) Find the range of raw scores
+  scores <- seq(min.score, max.score, 1)
+  
+  # 2) Find the theta values correspoding to the raw scores 
+  theta <- sapply(scores, raw2theta, df.scaled=x, D=D, lower=lower, upper=upper)
+  if(constraint) {
+    theta <- ifelse(theta < range.theta[1], range.theta[1], theta)
+    theta <- ifelse(theta > range.theta[2], range.theta[2], theta)
+  }
+  
+  # Create conversion table
+  if(intpo) {
+    
+    if(min.score > 1) {
+      lessg.score <- 0:(min.score-1)
+      
+      # calculate slope and intercept for linear interpolation
+      if(range.theta[1] > theta[1]) stop(paste0("A lower limit of theta is greater than a minimum theta value of ", 
+                                                round(theta[1], 3), " corresponding to the minimum raw score. Use the different a range of theta."))
+      if(range.theta[2] < tail(theta, 1)) stop(paste0("A upper limit of theta is less than a maximum theta value of ", 
+                                                      round(tail(theta, 1), 3), " corresponding to the maximum raw score. Use the different a range of theta."))
+      slope <- scores[1] / (theta[1] - range.theta[1])
+      intercept <- - slope * range.theta[1]
+      lessg.theta <- (lessg.score - intercept) / slope
+      
+      theta <- c(lessg.theta, theta)
+      theta <- ifelse(is.nan(theta), range.theta[1], theta)
+      scale.table <- data.frame(score=0:max.score, theta=theta)
+    } else {
+      if(range.theta[1] > theta[1]) stop(paste0("A lower limit of theta is greater than a minimum theta value of ", 
+                                                round(theta[1], 3), " corresponding to the minimum raw score. Use the different a range of theta."))
+      if(range.theta[2] < tail(theta, 1)) stop(paste0("A upper limit of theta is less than a maximum theta value of ", 
+                                                      round(tail(theta, 1), 3), " corresponding to the maximum raw score. Use the different a range of theta."))
+      theta <- c(range.theta[1], theta)
+      theta <- ifelse(is.nan(theta), range.theta[1], theta)
+      scale.table <- data.frame(score=0:max.score, theta=theta)
+    }
+    
+  } else {
+    
+    if(min.score_new > 1) {
+      lessg.score <- 0:(min.score-1)
+      lessg.theta <- rep(NA, length(lessg.score))
+      scale.table <- data.frame(score=0:max.score, theta=c(lessg.theta, theta))
+    } else {
+      scale.table <- data.frame(score=0:max.score, theta=c(NA, theta))
+    }
+    
+  }
+  
+  scale.table
+  
 }
 
 
