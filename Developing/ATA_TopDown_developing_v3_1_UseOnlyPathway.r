@@ -6,6 +6,10 @@
 # call packages
 library(lpSolveAPI)
 library(reshape2)
+library(parallel)
+library(pbapply)
+library(cacIRT)
+library(tidyverse)
 
 ##########################################################################
 # Read source code
