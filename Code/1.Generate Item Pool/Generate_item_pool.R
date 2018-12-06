@@ -67,7 +67,7 @@ pool_2 <- dat[idx, ]
 # generate content categories
 cats1 <- c(rep(1, nitem * .25), rep(2, nitem * .25), rep(3, nitem * .25), rep(4, nitem * .25))
 class1 <- sample(x=cats1, size=nitem)
-cats2 <- c(rep(1, nitem * .30), rep(2, nitem * .30), rep(3, nitem * .40))
+cats2 <- c(rep(1, nitem * .25), rep(2, nitem * .25), rep(3, nitem * .50))
 class2 <- sample(x=cats2, size=nitem)
 
 # create a data.frame
