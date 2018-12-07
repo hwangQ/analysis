@@ -222,6 +222,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
              prm.df=df_sim_list, info.mod=info_mod, theta=theta, solution=solution, 
              metainfo=constraints)
   
+  class(rr) <- "atamst"
   rr
   
 }
@@ -385,6 +386,7 @@ ata_mstBU <- function(item.pool, constraints, targetMIF, theta=seq(-4, 4, .1), D
              metainfo=list(targetMIF=targetMIF, route.map=route.map)
   )
   
+  class(rr) <- "atamst"
   rr
   
 }
