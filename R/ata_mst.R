@@ -34,7 +34,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   Nc_path2 <- cont_require[[2]] * test.length
   post <- constraints$post
   RDP <- post[c(-1, -length(post))] 
-  n.rdp <- (n.stage - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
+  n.rdp <- (nstg - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
   minmod.p <- constraints$minmod.p
   
   ##------------------------------------------
@@ -93,10 +93,10 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   for(w in 1:n.pathway) {
     temp <- cbind((pathway[w, ] * I - I + 1), (pathway[w, ] * I))
     indices <- NULL
-    for(s in 1:n.stage) {
+    for(s in 1:nstg) {
       indices <- c(indices, temp[s, 1]:temp[s, 2])
     }
-    add.constraint(lprec=sim_mod, xt=rep(1, I * n.stage), type="=", rhs=test.length, indices=indices)
+    add.constraint(lprec=sim_mod, xt=rep(1, I * nstg), type="=", rhs=test.length, indices=indices)
   }
   
   # constraint: first content category
@@ -104,10 +104,10 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
     for(i in 1:length(Nc_path1)) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
-      for(s in 1:n.stage) {
+      for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc1[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * n.stage), type=">=", rhs=Nc_path1[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * nstg), type=">=", rhs=Nc_path1[i], indices=indices)
     }
   }
   
@@ -116,10 +116,10 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
     for(i in 1:length(Nc_path2)) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
-      for(s in 1:n.stage) {
+      for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc2[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * n.stage), type=">=", rhs=Nc_path2[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * nstg), type=">=", rhs=Nc_path2[i], indices=indices)
     }
   }
   
@@ -134,7 +134,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   # constraint: two adjacent modules have the same module information at RDP
   info.RDP <- test.info(x=df_bank, theta=RDP, D=D)$itemInfo
   i <- 1
-  for(s in 2:n.stage) {
+  for(s in 2:nstg) {
     for(m in 1:(nmod[s]-1)) {
       index.1 <- (unique(pathway[, s])[m] * I - I + 1):(unique(pathway[, s])[m] * I)
       index.2 <- (unique(pathway[, s])[m+1] * I - I + 1):(unique(pathway[, s])[m+1] * I)
@@ -158,11 +158,11 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
         for(i in 1:length(theta_list[[g]])) {
           temp <- cbind((pathway[w, ] * I - I + 1), (pathway[w, ] * I))
           indices <- NULL
-          for(s in 1:n.stage) {
+          for(s in 1:nstg) {
             indices <- c(indices, temp[s, 1]:temp[s, 2])
           }
           indices <- c(indices, M)
-          add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], n.stage), -1), type=">=", rhs=0, indices=indices)
+          add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], nstg), -1), type=">=", rhs=0, indices=indices)
         }
       }
     }
@@ -181,8 +181,10 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
     solution <- "suboptimal"
     print("The model is sub-optimal")
   }
-  if(eval.model > 1) stop(paste0("A status code for this model is ", eval.model))
-  
+  if(eval.model > 1) {
+    print(paste0("A status code for this model is ", eval.model))
+    return(NULL)
+  }
   # retrieve the values of the decision variables 
   sim_opt <- get.variables(sim_mod)
   
