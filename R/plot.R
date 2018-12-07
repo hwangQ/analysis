@@ -1,3 +1,136 @@
+# This function creates test information functions for all routes across all assembled MSTs
+plot.list <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.text=NULL, lab.size=15, main.size=15, axis.size=15,
+                      line.color, line.size=1.5, legend.title, legend.text, legend.size=15, legend.position="right", 
+                      layout.col=3, strip.size=12) {
+  
+  
+  info_df <- NULL
+  for(i in 1:length(x)) {
+    
+    # read the assembled test forms
+    ata_forms <- x[[i]]$prm.df
+    
+    # read a routing map
+    route.map <- x[[i]]$metainfo$route.map
+    panel.info <- panel_info(route.map)
+    config.info <- panel.info$config
+    n.module <- panel.info$n.module
+    pathway <- panel.info$pathway
+    n.stage <- length(config.info)
+    
+    # read RDPs
+    post <- x[[i]]$metainfo$post
+    RDP <- post[-c(1, length(post))]
+    RDP_str <- paste0("MST ", i, ": RDP (", paste(RDP, collapse = ", "), ")") 
+    
+    # estimate the observed equated scores across all (sub) pathways
+    eos_list <- est_eos(ata_forms, pathway=pathway, range.theta=range.theta, D=D, constraint=TRUE)
+    
+    # extract item parameter data.frame
+    df_path <- eos_list$df_path[[n.stage]]
+    
+    # compute test information for all routes 
+    theta <- seq(-4, 4, 0.1)
+    testInfo <- purrr::map_dfc(1:length(df_path), .f=function(k) test.info(df_path[[k]], theta, D)$testInfo) %>% 
+      stats::setNames(nm=paste0("Route.", 1:length(df_path)))
+    testInfo$theta <- theta
+    testInfo <- reshape2::melt(data=testInfo, variable.name="Routes", id.vars="theta", value.name="info")
+    testInfo$RDP <- RDP_str
+    
+    info_df <- rbind(info_df, testInfo)
+    
+  }
+  
+  # plot TIF
+  # Set plot conditions
+  if(missing(xlab.text)) xlab.text <- expression(theta)
+  if(missing(ylab.text)) ylab.text <- 'Test Information'
+  if(missing(line.color)) {
+    line.color <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    # line.color <- brewer.pal(n = 9, name = "Greys")[3:9]
+  } else {
+    line.color <- line.color
+  }
+  if(missing(legend.title)) legend.title <- "Routes"
+  if(missing(legend.text)) legend.text <- paste0("Route.", 1:length(df_path))
+  
+  p <- info_df %>% 
+    ggplot(mapping=aes_string(x="theta", y="info")) +
+    geom_line(mapping=aes_string(color="Routes"), size=line.size) +
+    labs(title = main.text, x = xlab.text, y = ylab.text) +
+    theme(plot.title = element_text(size=main.size),
+          axis.title = element_text(size=lab.size),
+          axis.text = element_text(size=axis.size)) +
+    theme(legend.title = element_text(size=legend.size),
+          legend.text = element_text(size=legend.size),
+          legend.position = legend.position) +
+    facet_wrap(~RDP, ncol=layout.col) +
+    theme(strip.text.x = element_text(size = strip.size, face = 'bold')) +
+    scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
+  
+  p
+  
+}
+
+
+# This function creates test information functions for all routes for an MST
+plot.atamst <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.text=NULL, lab.size=15, main.size=15, axis.size=15,
+                        line.color, line.size=1.5, legend.title, legend.text, legend.size=15, legend.position="right") {
+  
+  # read the assembled test forms
+  ata_forms <- x$prm.df
+  
+  # read a routing map
+  route.map <- x$metainfo$route.map
+  panel.info <- panel_info(route.map)
+  config.info <- panel.info$config
+  n.module <- panel.info$n.module
+  pathway <- panel.info$pathway
+  n.stage <- length(config.info)
+  
+  # estimate the observed equated scores across all (sub) pathways
+  eos_list <- est_eos(ata_forms, pathway=pathway, range.theta=range.theta, D=D, constraint=TRUE)
+  
+  # extract item parameter data.frame
+  df_path <- eos_list$df_path[[n.stage]]
+  
+  # compute test information for all routes 
+  theta <- seq(-4, 4, 0.1)
+  testInfo <- purrr::map_dfc(1:length(df_path), .f=function(x) test.info(df_path[[x]], theta, D)$testInfo) %>% 
+    stats::setNames(nm=paste0("Route.", 1:length(df_path)))
+  testInfo$theta <- theta
+  testInfo <- reshape2::melt(data=testInfo, variable.name="Routes", id.vars="theta", value.name="info")
+  
+  # plot TIF
+  # Set plot conditions
+  if(missing(xlab.text)) xlab.text <- expression(theta)
+  if(missing(ylab.text)) ylab.text <- 'Test Information'
+  if(missing(line.color)) {
+    line.color <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    # line.color <- brewer.pal(n = 9, name = "Greys")[3:9]
+  } else {
+    line.color <- line.color
+  }
+  if(missing(legend.title)) legend.title <- "Routes"
+  if(missing(legend.text)) legend.text <- paste0("Route.", 1:length(df_path))
+  
+  p <- testInfo %>% 
+    ggplot(mapping=aes_string(x="theta", y="info")) +
+    geom_line(mapping=aes_string(color="Routes"), size=line.size) +
+    labs(title = main.text, x = xlab.text, y = ylab.text) +
+    theme(plot.title = element_text(size=main.size),
+          axis.title = element_text(size=lab.size),
+          axis.text = element_text(size=axis.size)) +
+    theme(legend.title = element_text(size=legend.size),
+          legend.text = element_text(size=legend.size),
+          legend.position = legend.position) +
+    scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
+  
+  p
+  
+}
+
+
 # a function to creat a plot for test information functions for all modules
 
 plot.ata_mst <- function(x, xlab="Theta", ylab="TIF", main="Simultaneous Assembley", col=1:4, lwd=2, ...) {
