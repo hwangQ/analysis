@@ -108,6 +108,27 @@ cal_moments <- function(node, weight) {
 
 }
 
+# This function computes three objective functions
+objfn <- function(obj=c("mrel", "ave.se", "max.se"), var.cond, var.pop=1, w, range=c(-2, 2)) {
+  
+  obj <- match.arg(obj)
+  
+  if(obj %in% c("ave.se", "max.se")) {
+    selected <- names(var.cond) %in% as.character(seq(range[1], range[2], .1))
+    var.cond <- var.cond[selected]
+    csee <- sqrt(var.cond)
+  }
+  
+  res <- switch(obj,
+                mrel = (var.pop - stats::weighted.mean(x=var.cond, w=w)) / var.pop,
+                ave.se = mean(csee),
+                max.se = max(csee)
+  )
+  
+  res
+  
+}
+
 # marginal reliability
 mrel <- function(var.pop, var.cond, wieghted=TRUE, w) {
 	
