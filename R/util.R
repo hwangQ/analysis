@@ -1,3 +1,32 @@
+# This function summarizes the results of the objective functions in the specified order
+summary_obj <- function(obj_res, order=NULL) {
+  
+  f <- function(i) {
+    obj_res %>% 
+      dplyr::summarize(max.mrel=sort(mrel, decreasing=TRUE, na.last=TRUE)[i], 
+                       loc.mrel=order(mrel, decreasing=TRUE, na.last=TRUE)[i], 
+                       min.ave=sort(ave_csee, na.last=TRUE)[i], 
+                       loc.ave=order(ave_csee, na.last=TRUE)[i],
+                       min.max=sort(max_csee, na.last=TRUE)[i], 
+                       loc.max=order(max_csee, na.last=TRUE)[i])
+  }
+  
+  if(is.null(order)) {
+    
+    res <- f(1)
+    res$order <- 1
+    
+  } else {
+    
+    res <- purrr::map_df(order, f)
+    res$order <- order
+    
+  }
+  
+  res
+  
+}
+
 # This function finds theta values for each targeted subpopulations
 subpop <- function(post, n.stage) {
   
