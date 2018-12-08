@@ -83,7 +83,7 @@ lapply(1:length(source.files), function(i) parallel::clusterCall(cl, fun=source,
 
 # run ata_mstTD for all combinations of RDPs
 f <- function(i) ata_mstTD(item.pool, constraints[[i]], theta, D, divide.D, lp.control)
-mstTD <- pbapply::pblapply(X=1:5, FUN=f, cl=cl) # to see the progress bar
+mstTD <- pbapply::pblapply(X=1:length(constraints), FUN=f, cl=cl) # to see the progress bar
 
 # finish
 parallel::stopCluster(cl)
@@ -187,16 +187,16 @@ saveRDS(obj_res, file=file.path(dir_out, "obj_res.rds"))
 
 ##----------------------------------------------------------------------------
 # summarize the results of objective functions in a specified order
-summary_obj(obj_res, order=1:5)
+summary_obj(obj_res, order=1:71)
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-x <- mstTD[[1]]
+x <- mstTD[[17]]
 plot(x, range.theta, D=1)
 
 # plot test information functions for all routes for multiple assembled MST
-x <- mstTD[c(1, 2, 3)]
-plot(x, range.theta, D, layout.col=2)
+x <- mstTD[c(17, 1, 20, 63, 70, 62)]
+plot(x, range.theta, D, layout.col=3)
 
 
 
