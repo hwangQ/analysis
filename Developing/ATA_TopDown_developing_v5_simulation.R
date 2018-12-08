@@ -37,7 +37,7 @@ item.pool <- bank_info
 n.core <- 3 # the number of cores to be used for parallel analysis
 test.length <- 32
 n.stage <- 3
-pform <- "133"
+pform <- "122"
 theta <- seq(-4, 4, .1)
 D <- 1
 divide.D <- FALSE
@@ -63,8 +63,6 @@ for(i in 1:nrow(RDP_mat)) {
 
 ##----------------------------------------------------------------------------
 # Automated test assembly using a top-down approach
-constraints <- constraints[1:5]
-
 # set the number of cpu cores
 left.core <- 4 - n.core
 numCores <- parallel::detectCores() - left.core
