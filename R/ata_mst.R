@@ -1,5 +1,9 @@
 # a function for ATA with top-down approach
-ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE, 
+ata_mstTD <- function(item.pool, 
+                      constraints=list(route.map=NULL, post=NULL, path.group=NULL, 
+                                      test.length=NULL, content=NULL, minmod.p=NULL,
+                                      with.end=TRUE, equal.info=TRUE), 
+                      theta=seq(-4, 4, 0.1), D=1.7, divide.D=FALSE, 
                       lp.control=list(timeout=60, epsint=0.1, mip.gap=c(0.1, 0.05))) {
   
   ##------------------------------------------
@@ -36,6 +40,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   RDP <- post[c(-1, -length(post))] 
   n.rdp <- (nstg - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
   minmod.p <- constraints$minmod.p
+  with.end <- constraints$with.end
   
   ##------------------------------------------
   # warning messages
@@ -55,7 +60,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   df_bank <- shape_df(par.dc=prm_dc_list, item.id=item.id, cats=cats, model=model)
   
   # create a matrix of item information for each subpopulation group of route
-  theta_list <- subpop(post, n.stage=nstg)
+  theta_list <- subpop(post, n.stage=nstg, with.end=with.end)
   info_list <- vector('list', n.group)
   for(i in 1:n.group) {
     info_list[[i]] <- test.info(x=df_bank, theta=theta_list[[i]], D=D)$itemInfo
@@ -132,17 +137,19 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   }
   
   # constraint: two adjacent modules have the same module information at RDP
-  info.RDP <- test.info(x=df_bank, theta=RDP, D=D)$itemInfo
-  i <- 1
-  for(s in 2:nstg) {
-    for(m in 1:(nmod[s]-1)) {
-      index.1 <- (unique(pathway[, s])[m] * I - I + 1):(unique(pathway[, s])[m] * I)
-      index.2 <- (unique(pathway[, s])[m+1] * I - I + 1):(unique(pathway[, s])[m+1] * I)
-      indices.1 <- c(index.1, M + i)
-      indices.2 <- c(index.2, M + i)
-      add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.1)
-      add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.2)
-      i <- i + 1
+  if(equal.info) {
+    info.RDP <- test.info(x=df_bank, theta=RDP, D=D)$itemInfo
+    i <- 1
+    for(s in 2:nstg) {
+      for(m in 1:(nmod[s]-1)) {
+        index.1 <- (unique(pathway[, s])[m] * I - I + 1):(unique(pathway[, s])[m] * I)
+        index.2 <- (unique(pathway[, s])[m+1] * I - I + 1):(unique(pathway[, s])[m+1] * I)
+        indices.1 <- c(index.1, M + i)
+        indices.2 <- c(index.2, M + i)
+        add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.1)
+        add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.2)
+        i <- i + 1
+      }
     }
   }
   
@@ -183,7 +190,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   }
   if(eval.model > 1) {
     print(paste0("A status code for this model is ", eval.model))
-    return(NULL)
+    return(paste0("A status code for this model is ", eval.model))
   }
   # retrieve the values of the decision variables 
   sim_opt <- get.variables(sim_mod)
