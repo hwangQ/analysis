@@ -45,7 +45,7 @@ write.csv(stat_df1, "Input/stat_pool_1.csv")
 
 
 ## Study 2 --------------------------------------------
-# (1) item pool with 250 items 
+# (1) item pool with 200 items 
 # set seed
 set.seed(377)
 
