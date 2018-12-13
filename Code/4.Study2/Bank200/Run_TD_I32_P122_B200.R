@@ -67,8 +67,6 @@ for(i in 1:nrow(RDP_mat)) {
                            with.end=with.end, equal.info=equal.info)
 }
 
-constraints <- constraints[1:6]
-
 ##----------------------------------------------------------------------------
 # Automated test assembly using a top-down approach
 # set the number of cpu cores
@@ -213,12 +211,12 @@ write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-plot(x = mstTD[[2]], range.theta, D=D)
+plot(x = mstTD[[58]], range.theta, D=D)
 
 # plot test information functions for all routes for multiple assembled MSTs
-plot(x=mstTD, which.mst=c(2, 5, 4, 6, 3, 1), range.theta, D, layout.col=3)
+plot(x=mstTD, which.mst=c(58, 56, 59, 60, 67, 55), range.theta, D, layout.col=3)
 
 # ploct CSEEs for multiple assembled MSTs
-plot_csee(cond_moments, which.mst=c(2, 1), cbind(RDP_mat[1:6, ]), ylim=c(0, 1.0))
+plot_csee(cond_moments, which.mst=c(58, 35), RDP_mat, ylim=c(0, 1.0))
 
 
