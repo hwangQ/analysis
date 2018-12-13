@@ -7,14 +7,14 @@ plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, ma
   RDP <- cbind(RDP_mat[which.mst, ])
   
   # creat column names for a data.frame
-  col_names <- purrr::map_chr(1:length(which.mst), .f=function(x) paste0("MST ", x, ": RDP (", paste(RDP[x, ], collapse = ", "), ")"))
+  col_names <- purrr::map_chr(1:length(which.mst), .f=function(x) paste0("MST ", x, ": RDP (", paste(round(RDP[x, ], 2), collapse = ", "), ")"))
   
   # data manipulation 
   df_csee <- 
     purrr::map_dfc(cond_moments, .f=function(x) sqrt(x[2, ])) %>% 
     stats::setNames(nm=col_names)
   df_csee$theta <- as.numeric(colnames(cond_moments[[1]])) 
-  df_csee2 <- reshape2::melt(data=df_csee, variable.name="RDP", id.vars="theta", value.name="CSEE")
+  df_csee2 <- reshape2::melt(data=df_csee, variable.name="MST", id.vars="theta", value.name="CSEE")
   
   # set plot conditions
   if(missing(xlab.text)) xlab.text <- expression(theta)
@@ -23,7 +23,7 @@ plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, ma
   # draw CSEE plots
   p <- df_csee2 %>% 
     ggplot(mapping=aes_string(x="theta", y="CSEE")) +
-    geom_line(mapping=aes_string(color="RDP"), size=line.size) +
+    geom_line(mapping=aes_string(color="MST"), size=line.size) +
     labs(title = main.text, x = xlab.text, y = ylab.text) +
     ylim(ylim[1], ylim[2]) +
     theme(plot.title = element_text(size=main.size),
