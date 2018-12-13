@@ -1,8 +1,51 @@
+# This function draws CSEE plot for multiple MSTs 
+plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, main.text=NULL, ylim=c(0, 1), lab.size=15, 
+                      main.size=15, axis.size=15, line.size=1.5, legend.size=15, legend.position="right") {
+  
+  # select MSTs and RDP points to draw CSEE plot
+  cond_moments <- cond_moments[which.mst]
+  RDP <- cbind(RDP_mat[which.mst, ])
+  
+  # creat column names for a data.frame
+  col_names <- purrr::map_chr(1:length(which.mst), .f=function(x) paste0("MST ", x, ": RDP (", paste(RDP[x, ], collapse = ", "), ")"))
+  
+  # data manipulation 
+  df_csee <- 
+    purrr::map_dfc(cond_moments, .f=function(x) sqrt(x[2, ])) %>% 
+    stats::setNames(nm=col_names)
+  df_csee$theta <- as.numeric(colnames(cond_moments[[1]])) 
+  df_csee2 <- reshape2::melt(data=df_csee, variable.name="RDP", id.vars="theta", value.name="CSEE")
+  
+  # set plot conditions
+  if(missing(xlab.text)) xlab.text <- expression(theta)
+  if(missing(ylab.text)) ylab.text <- 'CSEE'
+  
+  # draw CSEE plots
+  p <- df_csee2 %>% 
+    ggplot(mapping=aes_string(x="theta", y="CSEE")) +
+    geom_line(mapping=aes_string(color="RDP"), size=line.size) +
+    labs(title = main.text, x = xlab.text, y = ylab.text) +
+    ylim(ylim[1], ylim[2]) +
+    theme(plot.title = element_text(size=main.size),
+          axis.title = element_text(size=lab.size),
+          axis.text = element_text(size=axis.size)) +
+    theme(legend.title = element_text(size=legend.size),
+          legend.text = element_text(size=legend.size),
+          legend.position = legend.position)
+  
+  
+  p
+  
+}
+
+
 # This function creates test information functions for all routes across all assembled MSTs
-plot.list <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.text=NULL, lab.size=15, main.size=15, axis.size=15,
+plot.list <- function(x, which.mst, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.text=NULL, lab.size=15, main.size=15, axis.size=15,
                       line.color, line.size=1.5, legend.title, legend.text, legend.size=15, legend.position="right", 
                       layout.col=3, strip.size=12) {
   
+  # select MSTs to be used for a plot
+  x <- x[which.mst]
   
   info_df <- NULL
   for(i in 1:length(x)) {
@@ -42,6 +85,9 @@ plot.list <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.t
   }
   
   # plot TIF
+  # creat route names
+  rout_nm <- purrr::map_chr(1:nrow(pathway), .f=function(x) paste(pathway[x, ], collapse = "-"))
+  
   # Set plot conditions
   if(missing(xlab.text)) xlab.text <- expression(theta)
   if(missing(ylab.text)) ylab.text <- 'Test Information'
@@ -52,7 +98,7 @@ plot.list <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main.t
     line.color <- line.color
   }
   if(missing(legend.title)) legend.title <- "Routes"
-  if(missing(legend.text)) legend.text <- paste0("Route.", 1:length(df_path))
+  if(missing(legend.text)) legend.text <- rout_nm
   
   p <- info_df %>% 
     ggplot(mapping=aes_string(x="theta", y="info")) +
@@ -102,6 +148,9 @@ plot.atamst <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main
   testInfo <- reshape2::melt(data=testInfo, variable.name="Routes", id.vars="theta", value.name="info")
   
   # plot TIF
+  # creat route names
+  rout_nm <- purrr::map_chr(1:nrow(pathway), .f=function(x) paste(pathway[x, ], collapse = "-"))
+  
   # Set plot conditions
   if(missing(xlab.text)) xlab.text <- expression(theta)
   if(missing(ylab.text)) ylab.text <- 'Test Information'
@@ -112,7 +161,7 @@ plot.atamst <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main
     line.color <- line.color
   }
   if(missing(legend.title)) legend.title <- "Routes"
-  if(missing(legend.text)) legend.text <- paste0("Route.", 1:length(df_path))
+  if(missing(legend.text)) legend.text <- rout_nm
   
   p <- testInfo %>% 
     ggplot(mapping=aes_string(x="theta", y="info")) +
