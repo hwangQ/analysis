@@ -1,5 +1,9 @@
 # a function for ATA with top-down approach
-ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE, 
+ata_mstTD <- function(item.pool, 
+                      constraints=list(route.map=NULL, post=NULL, path.group=NULL, 
+                                      test.length=NULL, content=NULL, minmod.p=NULL,
+                                      with.end=TRUE, equal.info=TRUE), 
+                      theta=seq(-4, 4, 0.1), D=1.0, divide.D=FALSE, 
                       lp.control=list(timeout=60, epsint=0.1, mip.gap=c(0.1, 0.05))) {
   
   ##------------------------------------------
@@ -36,6 +40,8 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   RDP <- post[c(-1, -length(post))] 
   n.rdp <- (nstg - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
   minmod.p <- constraints$minmod.p
+  with.end <- constraints$with.end
+  equal.info <- constraints$equal.info
   
   ##------------------------------------------
   # warning messages
@@ -55,7 +61,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   df_bank <- shape_df(par.dc=prm_dc_list, item.id=item.id, cats=cats, model=model)
   
   # create a matrix of item information for each subpopulation group of route
-  theta_list <- subpop(post, n.stage=nstg)
+  theta_list <- subpop(post, n.stage=nstg, with.end=with.end)
   info_list <- vector('list', n.group)
   for(i in 1:n.group) {
     info_list[[i]] <- test.info(x=df_bank, theta=theta_list[[i]], D=D)$itemInfo
@@ -101,25 +107,25 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   
   # constraint: first content category
   for(w in 1:n.pathway) {
-    for(i in 1:length(Nc_path1)) {
+    for(i in 1:C1) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
       for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc1[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * nstg), type=">=", rhs=Nc_path1[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * nstg), type="=", rhs=Nc_path1[i], indices=indices)
     }
   }
   
   # constraint: second content category
   for(w in 1:n.pathway) {
-    for(i in 1:length(Nc_path2)) {
+    for(i in 1:C2) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
       for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc2[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * nstg), type=">=", rhs=Nc_path2[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * nstg), type="=", rhs=Nc_path2[i], indices=indices)
     }
   }
   
@@ -132,17 +138,19 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   }
   
   # constraint: two adjacent modules have the same module information at RDP
-  info.RDP <- test.info(x=df_bank, theta=RDP, D=D)$itemInfo
-  i <- 1
-  for(s in 2:nstg) {
-    for(m in 1:(nmod[s]-1)) {
-      index.1 <- (unique(pathway[, s])[m] * I - I + 1):(unique(pathway[, s])[m] * I)
-      index.2 <- (unique(pathway[, s])[m+1] * I - I + 1):(unique(pathway[, s])[m+1] * I)
-      indices.1 <- c(index.1, M + i)
-      indices.2 <- c(index.2, M + i)
-      add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.1)
-      add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.2)
-      i <- i + 1
+  if(equal.info) {
+    info.RDP <- test.info(x=df_bank, theta=RDP, D=D)$itemInfo
+    i <- 1
+    for(s in 2:nstg) {
+      for(m in 1:(nmod[s]-1)) {
+        index.1 <- (unique(pathway[, s])[m] * I - I + 1):(unique(pathway[, s])[m] * I)
+        index.2 <- (unique(pathway[, s])[m+1] * I - I + 1):(unique(pathway[, s])[m+1] * I)
+        indices.1 <- c(index.1, M + i)
+        indices.2 <- c(index.2, M + i)
+        add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.1)
+        add.constraint(lprec=sim_mod, xt=c(info.RDP[, m], -1), type="=", rhs=0, indices=indices.2)
+        i <- i + 1
+      }
     }
   }
   
@@ -154,6 +162,7 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
   # constraint: target information (relative target)
   for(w in 1:n.pathway) {
     for(g in 1:n.group) {
+      
       if(w %in% path.group[[g]]) {
         for(i in 1:length(theta_list[[g]])) {
           temp <- cbind((pathway[w, ] * I - I + 1), (pathway[w, ] * I))
@@ -164,7 +173,10 @@ ata_mstTD <- function(item.pool, constraints, theta, D=1.702, divide.D=FALSE,
           indices <- c(indices, M)
           add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], nstg), -1), type=">=", rhs=0, indices=indices)
         }
+      } else {
+        next
       }
+      
     }
   }
   

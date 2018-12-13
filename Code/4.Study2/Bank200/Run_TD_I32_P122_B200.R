@@ -19,8 +19,11 @@ src.files <- list.files("R/", pattern="*.R")
 purrr::walk(src.files, function(x) source(file.path("R", x)))
 
 ##----------------------------------------------------------------------------
+# set the item bank size
+bank_size <- 200
+
 # read item bank and content category information
-bank_info <- readRDS("Input/item_pool_2.rds")
+bank_info <- readRDS(paste0("Input/item_pool_2_B", bank_size, ".rds"))
 bank_info <- data.frame(ID=1:nrow(bank_info), bank_info)
 names(bank_info) <- c("ID", "PARAM.1", "PARAM.2", "PARAM.3", "CLASS1", "CLASS2")
 
@@ -39,13 +42,15 @@ test.length <- 32
 n.stage <- 3
 pform <- "122"
 theta <- seq(-4, 4, .1)
-D <- 1
+D <- 1.0
 divide.D <- FALSE
+with.end <- FALSE
+equal.info <- TRUE
 lp.control <- list(timeout=180, epsint=0.2, mip.gap=c(0.1, 0.05))
 content1 <- read.csv(paste0("Input/Content_TD_Class1.csv"))
 content2 <- read.csv(paste0("Input/Content_TD_Class2.csv"))
 content <- list(content1[, 2], content2[, 2])
-minmod.p <- 0.3 
+minmod.p <- 0.2
 if(pform == "133") path.group <- list(g1=1, g2=c(2, 3), g3=4, g4=c(5, 6), g5=7) # 1-3-3 MST
 if(pform == "13") path.group <- list(g1=1, g2=2, g3=3) # 1-3 MST
 if(pform == "122") path.group <- list(g1=1, g2=c(2, 3), g3=4) # 1-2-2 MST
@@ -58,8 +63,11 @@ for(i in 1:nrow(RDP_mat)) {
   RDP <- RDP_mat[i, ]
   post <- c(-2.0, RDP, 2.0)
   constraints[[i]] <- list(route.map=route.map, post=post, path.group=path.group, 
-                           test.length=test.length, content=content, minmod.p=minmod.p)
+                           test.length=test.length, content=content, minmod.p=minmod.p,
+                           with.end=with.end, equal.info=equal.info)
 }
+
+constraints <- constraints[1:6]
 
 ##----------------------------------------------------------------------------
 # Automated test assembly using a top-down approach
@@ -89,11 +97,20 @@ mstTD <- pbapply::pblapply(X=1:length(constraints), FUN=f, cl=cl) # to see the p
 parallel::stopCluster(cl)
 
 # save results
-dir_out <- file.path("Output/Study2", paste0("I", test.length, "_", pform, "MST"))
+dir_out <- file.path(paste0("Output/Study2/Bank", bank_size), paste0("I", test.length, "_", pform, "MST"))
 saveRDS(mstTD, file=file.path(dir_out, "mstTD.rds"))
 
 # read results
 # mstTD <- readRDS(file.path(dir_out, "mstTD.rds"))
+
+# check the number of cases that the ATA process failed
+failed_num <- sum(purrr::map_lgl(mstTD, is.null))
+failed_rate <- failed_num / length(mstTD)
+failed <- c(failed_num, failed_rate) %>% 
+  setNames(nm = c("N", "(%)"))
+
+# save the failed case and rates
+write.csv(failed, file.path(dir_out, "failed.csv"))
 
 ##----------------------------------------------------------------------------
 # Analytical evaluation
@@ -142,7 +159,8 @@ for(i in 1:length(mstTD)) {
     x <- cond_dist
     eos.path <- eos_list$eos_path
     n.path <- eos_list$n_path
-    joint.dist <- ability_dist(x, eos.path, n.path, cut.score=RDPList)
+    # joint.dist <- ability_dist(x, eos.path, n.path, cut.score=RDPList)
+    joint.dist <- ability_dist(x, eos.path, n.path, cut.score=cut.score)
     
     # calculate a mean and sd of conditional ability distribution at each ability value
     if(n.stage == 2) {
@@ -171,6 +189,7 @@ for(i in 1:length(mstTD)) {
   utils::setWinProgressBar(pb, i/length(mstTD)*100, title=info, label=paste0("Evaluation of the assembled MST ", i, " is done"))
   
 }
+
 ###### Closing the Progress Bar
 close(pb)
 
@@ -187,18 +206,19 @@ saveRDS(obj_res, file=file.path(dir_out, "obj_res.rds"))
 
 ##----------------------------------------------------------------------------
 # summarize the results of objective functions in a specified order
-summary_obj(obj_res, order=1:71)
+obj_df <- summary_obj(obj_res, order=1:length(mstTD))
+
+# save the summary of the results
+write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-x <- mstTD[[17]]
-plot(x, range.theta, D=1)
+plot(x = mstTD[[2]], range.theta, D=D)
 
-# plot test information functions for all routes for multiple assembled MST
-x <- mstTD[c(17, 1, 20, 63, 70, 62)]
-plot(x, range.theta, D, layout.col=3)
+# plot test information functions for all routes for multiple assembled MSTs
+plot(x=mstTD, which.mst=c(2, 5, 4, 6, 3, 1), range.theta, D, layout.col=3)
 
-
-
+# ploct CSEEs for multiple assembled MSTs
+plot_csee(cond_moments, which.mst=c(2, 1), cbind(RDP_mat[1:6, ]), ylim=c(0, 1.0))
 
 
