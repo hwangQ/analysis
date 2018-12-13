@@ -3,7 +3,7 @@ ata_mstTD <- function(item.pool,
                       constraints=list(route.map=NULL, post=NULL, path.group=NULL, 
                                       test.length=NULL, content=NULL, minmod.p=NULL,
                                       with.end=TRUE, equal.info=TRUE), 
-                      theta=seq(-4, 4, 0.1), D=1.7, divide.D=FALSE, 
+                      theta=seq(-4, 4, 0.1), D=1.0, divide.D=FALSE, 
                       lp.control=list(timeout=60, epsint=0.1, mip.gap=c(0.1, 0.05))) {
   
   ##------------------------------------------
@@ -41,6 +41,7 @@ ata_mstTD <- function(item.pool,
   n.rdp <- (nstg - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
   minmod.p <- constraints$minmod.p
   with.end <- constraints$with.end
+  equal.info <- constraints$equal.info
   
   ##------------------------------------------
   # warning messages
@@ -106,25 +107,25 @@ ata_mstTD <- function(item.pool,
   
   # constraint: first content category
   for(w in 1:n.pathway) {
-    for(i in 1:length(Nc_path1)) {
+    for(i in 1:C1) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
       for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc1[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * nstg), type=">=", rhs=Nc_path1[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc1[[i]]) * nstg), type="=", rhs=Nc_path1[i], indices=indices)
     }
   }
   
   # constraint: second content category
   for(w in 1:n.pathway) {
-    for(i in 1:length(Nc_path2)) {
+    for(i in 1:C2) {
       temp <- pathway[w, ]*I - I
       indices <- NULL
       for(s in 1:nstg) {
         indices <- c(indices, temp[s] + Vc2[[i]])
       }
-      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * nstg), type=">=", rhs=Nc_path2[i], indices=indices)
+      add.constraint(lprec=sim_mod, xt=rep(1, length(Vc2[[i]]) * nstg), type="=", rhs=Nc_path2[i], indices=indices)
     }
   }
   
@@ -161,6 +162,7 @@ ata_mstTD <- function(item.pool,
   # constraint: target information (relative target)
   for(w in 1:n.pathway) {
     for(g in 1:n.group) {
+      
       if(w %in% path.group[[g]]) {
         for(i in 1:length(theta_list[[g]])) {
           temp <- cbind((pathway[w, ] * I - I + 1), (pathway[w, ] * I))
@@ -171,7 +173,10 @@ ata_mstTD <- function(item.pool,
           indices <- c(indices, M)
           add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], nstg), -1), type=">=", rhs=0, indices=indices)
         }
+      } else {
+        next
       }
+      
     }
   }
   
@@ -190,7 +195,7 @@ ata_mstTD <- function(item.pool,
   }
   if(eval.model > 1) {
     print(paste0("A status code for this model is ", eval.model))
-    return(paste0("A status code for this model is ", eval.model))
+    return(NULL)
   }
   # retrieve the values of the decision variables 
   sim_opt <- get.variables(sim_mod)
