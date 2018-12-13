@@ -36,7 +36,7 @@ subpop <- function(post, n.stage, with.end=TRUE) {
       if(with.end) {
         thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)
       } else {
-      thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)[2:4]
+        thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)[2:4]
       }
     }
   }
@@ -52,7 +52,7 @@ subpop <- function(post, n.stage, with.end=TRUE) {
       if(with.end) {
         thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)
       } else {
-      thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)[2:4]
+        thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)[2:4]
       }
     }
   }
