@@ -137,7 +137,7 @@ lapply(1:length(source.files), function(i) parallel::clusterCall(cl, fun=source,
 
 # run anal_evalMST for all assembled MSTs
 eval_mstTD <- pbapply::pblapply(X=mstTD, FUN=anal_evalMST, route.method=route.method, theta=theta, 
-                                range.theta=range.theta, interval=interval, D=D, cl=cl) # to see the progress bar
+                                range.theta=range.theta, interval=interval, D=D, cl=cl) 
 
 ##----------------------------------------------------------------------------
 # extract measurement precision and objective function values
