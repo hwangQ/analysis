@@ -77,7 +77,7 @@ plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, ma
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
           legend.position = legend.position) +
-    theme_bw() +
+    theme_bw()
   
   p
   
