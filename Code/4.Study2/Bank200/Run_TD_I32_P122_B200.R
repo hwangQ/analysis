@@ -44,9 +44,8 @@ pform <- "122"
 theta <- seq(-4, 4, .1)
 D <- 1.0
 divide.D <- FALSE
-with.end <- FALSE
 equal.info <- TRUE
-lp.control <- list(timeout=180, epsint=0.2, mip.gap=c(0.1, 0.05))
+lp.control <- list(timeout=180, epsint=0.1, mip.gap=c(0.1, 0.05))
 content1 <- read.csv(paste0("Input/Content_TD_Class1.csv"))
 content2 <- read.csv(paste0("Input/Content_TD_Class2.csv"))
 content <- list(content1[, 2], content2[, 2])
@@ -64,7 +63,7 @@ for(i in 1:nrow(RDP_mat)) {
   post <- c(-2.0, RDP, 2.0)
   constraints[[i]] <- list(route.map=route.map, post=post, path.group=path.group, 
                            test.length=test.length, content=content, minmod.p=minmod.p,
-                           with.end=with.end, equal.info=equal.info)
+                           equal.info=equal.info)
 }
 
 ##----------------------------------------------------------------------------
@@ -115,81 +114,37 @@ write.csv(failed, file.path(dir_out, "failed.csv"))
 # set condtions
 range.theta <- c(-5, 5)
 interval <- c(-2.5, 2.5)
-
-# create an empty containers
-cond_moments <- vector('list', length(mstTD))
-mrel <- rep(NA, length(mstTD))
-ave_csee <- rep(NA, length(mstTD))
-max_csee <- rep(NA, length(mstTD))
+route.method <- "DPI"
 
 # evaluation
-# initialize the progress bar
-pb <- utils::winProgressBar(title="Evaluation Progress: 0%", label="No replication is done", min=0, max=100, initial=0)
-for(i in 1:length(mstTD)) {
+# set the number of cpu cores
+left.core <- 4 - n.core
+numCores <- parallel::detectCores() - left.core
 
-  if(is.null(mstTD[[i]])) { 
-    
-    next
-    
-  } else {
-  
-    # read the assembled test forms
-    ata_forms <- mstTD[[i]]$prm.df
-    RDP <- RDP_mat[i, ]
-    RDPList <- list(NA, RDP, RDP)
-    
-    # read a routing map
-    panel.info <- panel_info(route.map)
-    config.info <- panel.info$config
-    n.module <- panel.info$n.module
-    pathway <- panel.info$pathway
-    
-    # estimate the observed equated scores across all (sub) pathways
-    eos_list <- est_eos(ata_forms, pathway=pathway, range.theta=range.theta, D=D, constraint=TRUE)
-    
-    # find points where two adjacent TIFs intersect across all stages
-    cut.score <- cutoff(ata_forms, route.map, RDP=RDPList, D, range.theta, interval)
-    
-    # conditional raw score distribution of each module given an ability value
-    cond_dist <- ability_dist_sep(ata_forms, theta, route.map, D)
-    
-    # conditional ability distribution of total-test ability estimates given a true ability
-    x <- cond_dist
-    eos.path <- eos_list$eos_path
-    n.path <- eos_list$n_path
-    # joint.dist <- ability_dist(x, eos.path, n.path, cut.score=RDPList)
-    joint.dist <- ability_dist(x, eos.path, n.path, cut.score=cut.score)
-    
-    # calculate a mean and sd of conditional ability distribution at each ability value
-    if(n.stage == 2) {
-      cond_moments[[i]] <- sapply(joint.dist$joint.dist$stage2, cal_moments, node=eos_list$eos_path$stage2)
-    }
-    if(n.stage == 3) {
-      cond_moments[[i]] <- sapply(joint.dist$joint.dist$stage3, cal_moments, node=eos_list$eos_path$stage3)
-    }
-    
-    ##----------------------------------------------------------------------------
-    # Compute three objective functions
-    # generate weights
-    w <- dnorm(theta, 0, 1)
-    w <- w/sum(w)
-    
-    # compute objective function values
-    var.cond <- cond_moments[[i]][2, ]
-    mrel[i] <- objfn(obj="mrel", var.cond, var.pop=1, w=w, range=c(-2, 2))
-    ave_csee[i] <- objfn(obj="ave.se", var.cond, var.pop=1, w=w, range=c(-2, 2))
-    max_csee[i] <- objfn(obj="max.se", var.cond, var.pop=1, w=w, range=c(-2, 2))
+# create a parallel processesing cluster
+cl = parallel::makeCluster(numCores, type="PSOCK")
 
-  }
-  
-  # modify the progress bar (using setWinProgressBar function)
-  info <- sprintf("Evaluation Progress: %d%%", round((i/length(mstTD))*100))
-  utils::setWinProgressBar(pb, i/length(mstTD)*100, title=info, label=paste0("Evaluation of the assembled MST ", i, " is done"))
-  
-}
+# load packages
+parallel::clusterEvalQ(cl, library(lpSolveAPI))
+parallel::clusterEvalQ(cl, library(reshape2))
 
-###### Closing the Progress Bar
-close(pb)
+# load some specific variable names into processing cluster
+parallel::clusterExport(cl, c("route.method", "theta", "range.theta", "interval", "D"))
+
+# load source files used for the replications into processing cluster
+source.files <- file.path(getwd(), "R", src.files)
+lapply(1:length(source.files), function(i) parallel::clusterCall(cl, fun=source, source.files[i]))
+
+# run anal_evalMST for all assembled MSTs
+eval_mstTD <- pbapply::pblapply(X=mstTD, FUN=anal_evalMST, route.method=route.method, theta=theta, 
+                                range.theta=range.theta, interval=interval, D=D, cl=cl) # to see the progress bar
+
+##----------------------------------------------------------------------------
+# extract measurement precision and objective function values
+cond_moments <- purrr::map(eval_mstTD, .f=function(x) x$cond_moments)
+mrel <- purrr::map_dbl(eval_mstTD, .f=function(x) x$object.fn$mrel)
+ave_csee <- purrr::map_dbl(eval_mstTD, .f=function(x) x$object.fn$ave_csee)
+max_csee <- purrr::map_dbl(eval_mstTD, .f=function(x) x$object.fn$max_csee)
 
 # combine all objective function results
 obj_res <- data.frame(mrel=mrel, ave_csee=ave_csee, max_csee=max_csee)
@@ -211,12 +166,12 @@ write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-plot(x = mstTD[[44]], range.theta, D=D)
+plot(x = mstTD[[32]], range.theta, D=D)
 
 # plot test information functions for all routes for multiple assembled MSTs
-plot(x=mstTD, which.mst=obj_df$loc.mre[1:4], range.theta, D, layout.col=2)
+plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4, 70, 71)], range.theta, D, layout.col=3)
 
 # ploct CSEEs for multiple assembled MSTs
-plot_csee(cond_moments, which.mst=c(58, 35), RDP_mat, ylim=c(0, 1.0))
+plot_csee(cond_moments, which.mst=c(32, 42, 67, 1), RDP_mat, ylim=c(0, 1.0))
 
 
