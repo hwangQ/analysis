@@ -1,3 +1,48 @@
+
+# This function draws plots for CSEE or Bias under Study 1
+plot_study1 <- function(x, x.var="theta", y.var=c("CSEE", "Bias"), point.size=1.5, line.size=0.8, 
+                        lab.size=15, axis.size=15, legend.size=15, strip.size=10, ylim=NULL) {
+  
+  if(y.var == "CSEE") ylab <- "Standard Error"
+  if(y.var == "Bias") ylab <- "Bias"
+  
+  if(is.null(ylim)) {
+    p <- x %>% 
+      ggplot(mapping=aes_string(x="theta", y=y.var)) +
+      geom_point(mapping=aes_string(shape="Method"), size=point.size) +
+      geom_line(mapping=aes_string(color="Method"), size=line.size) +
+      # geom_line(mapping=aes_string(linetype="Method"), size=0.8) + 
+      labs(x = expression(theta), y = ylab) +
+      theme(axis.title = element_text(size=lab.size),
+            axis.text = element_text(size=axis.size)) +
+      theme(legend.title = element_text(size=legend.size),
+            legend.text = element_text(size=legend.size)) +
+      theme_bw() +
+      facet_grid(Length ~ Panel) +
+      theme(strip.text.x = element_text(size = strip.size, face = 'bold'),
+            strip.text.y = element_text(size = strip.size, face = 'bold'))
+  } else {
+    p <- x %>% 
+      ggplot(mapping=aes_string(x="theta", y=y.var)) +
+      geom_point(mapping=aes_string(shape="Method"), size=point.size) +
+      geom_line(mapping=aes_string(color="Method"), size=line.size) +
+      # geom_line(mapping=aes_string(linetype="Method"), size=0.8) + 
+      labs(x = expression(theta), y = ylab) +
+      ylim(ylim[1], ylim[2]) +
+      theme(axis.title = element_text(size=lab.size),
+            axis.text = element_text(size=axis.size)) +
+      theme(legend.title = element_text(size=legend.size),
+            legend.text = element_text(size=legend.size)) +
+      theme_bw() +
+      facet_grid(Length ~ Panel) +
+      theme(strip.text.x = element_text(size = strip.size, face = 'bold'),
+            strip.text.y = element_text(size = strip.size, face = 'bold'))
+  }
+  
+  p
+  
+}
+
 # This function draws CSEE plot for multiple MSTs 
 plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, main.text=NULL, ylim=c(0, 1), lab.size=15, 
                       main.size=15, axis.size=15, line.size=1.5, legend.size=15, legend.position="right") {
@@ -31,8 +76,8 @@ plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, ma
           axis.text = element_text(size=axis.size)) +
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
-          legend.position = legend.position)
-  
+          legend.position = legend.position) +
+    theme_bw() +
   
   p
   
@@ -110,6 +155,7 @@ plot.list <- function(x, which.mst, range.theta=c(-5, 5), D=1, xlab.text, ylab.t
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
           legend.position = legend.position) +
+    theme_bw() +
     facet_wrap(~RDP, ncol=layout.col) +
     theme(strip.text.x = element_text(size = strip.size, face = 'bold')) +
     scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
@@ -173,6 +219,7 @@ plot.atamst <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
           legend.position = legend.position) +
+    theme_bw() +
     scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
   
   p
