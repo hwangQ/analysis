@@ -211,10 +211,10 @@ write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-plot(x = mstTD[[58]], range.theta, D=D)
+plot(x = mstTD[[44]], range.theta, D=D)
 
 # plot test information functions for all routes for multiple assembled MSTs
-plot(x=mstTD, which.mst=c(58, 56, 59, 60, 67, 55), range.theta, D, layout.col=3)
+plot(x=mstTD, which.mst=obj_df$loc.mre[1:4], range.theta, D, layout.col=2)
 
 # ploct CSEEs for multiple assembled MSTs
 plot_csee(cond_moments, which.mst=c(58, 35), RDP_mat, ylim=c(0, 1.0))
