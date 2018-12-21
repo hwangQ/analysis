@@ -2,7 +2,7 @@
 ata_mstTD <- function(item.pool, 
                       constraints=list(route.map=NULL, post=NULL, path.group=NULL, 
                                       test.length=NULL, content=NULL, minmod.p=NULL,
-                                      with.end=TRUE, equal.info=TRUE), 
+                                      equal.info=TRUE), 
                       theta=seq(-4, 4, 0.1), D=1.0, divide.D=FALSE, 
                       lp.control=list(timeout=60, epsint=0.1, mip.gap=c(0.1, 0.05))) {
   
@@ -40,7 +40,6 @@ ata_mstTD <- function(item.pool,
   RDP <- post[c(-1, -length(post))] 
   n.rdp <- (nstg - 1) * length(RDP) # the number of RPD points where two adjacent modules intersect
   minmod.p <- constraints$minmod.p
-  with.end <- constraints$with.end
   equal.info <- constraints$equal.info
   
   ##------------------------------------------
@@ -61,7 +60,7 @@ ata_mstTD <- function(item.pool,
   df_bank <- shape_df(par.dc=prm_dc_list, item.id=item.id, cats=cats, model=model)
   
   # create a matrix of item information for each subpopulation group of route
-  theta_list <- subpop(post, n.stage=nstg, with.end=with.end)
+  theta_list <- subpop(post, n.stage=nstg)
   info_list <- vector('list', n.group)
   for(i in 1:n.group) {
     info_list[[i]] <- test.info(x=df_bank, theta=theta_list[[i]], D=D)$itemInfo
@@ -172,6 +171,7 @@ ata_mstTD <- function(item.pool,
           }
           indices <- c(indices, M)
           add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], nstg), -1), type=">=", rhs=0, indices=indices)
+          # add.constraint(lprec=sim_mod, xt=c(rep(info_list[[g]][, i], nstg), -1), type="<=", rhs=0.2, indices=indices)
         }
       } else {
         next
