@@ -148,7 +148,7 @@ for(i in 1:length(mstTD)) {
     eos_list <- est_eos(ata_forms, pathway=pathway, range.theta=range.theta, D=D, constraint=TRUE)
     
     # find points where two adjacent TIFs intersect across all stages
-    cut.score <- cutoff(ata_forms, route.map, RDP=RDPList, D, range.theta, interval)
+    # cut.score <- cutoff(ata_forms, route.map, RDP=RDPList, D, range.theta, interval)
     
     # conditional raw score distribution of each module given an ability value
     cond_dist <- ability_dist_sep(ata_forms, theta, route.map, D)
@@ -157,8 +157,8 @@ for(i in 1:length(mstTD)) {
     x <- cond_dist
     eos.path <- eos_list$eos_path
     n.path <- eos_list$n_path
-    # joint.dist <- ability_dist(x, eos.path, n.path, cut.score=RDPList)
-    joint.dist <- ability_dist(x, eos.path, n.path, cut.score=cut.score)
+    joint.dist <- ability_dist(x, eos.path, n.path, cut.score=RDPList)
+    # joint.dist <- ability_dist(x, eos.path, n.path, cut.score=cut.score)
     
     # calculate a mean and sd of conditional ability distribution at each ability value
     if(n.stage == 2) {
@@ -208,5 +208,4 @@ obj_df <- summary_obj(obj_res, order=1:length(mstTD))
 
 # save the summary of the results
 write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
-
 
