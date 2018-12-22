@@ -164,3 +164,12 @@ obj_df <- summary_obj(obj_res, order=1:length(mstTD))
 # save the summary of the results
 write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
+
+##----------------------------------------------------------------------------
+# plot test information functions for all routes for each assembled MST
+plot(x = mstTD[[755]], range.theta, D=D)
+
+# plot test information functions for all routes for multiple assembled MSTs
+plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, layout.col=3)
+
+
