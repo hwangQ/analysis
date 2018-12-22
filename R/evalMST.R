@@ -11,7 +11,13 @@ anal_evalMST <- function(x, route.method=c("AMI", "DPI"), theta=seq(-4, 4, 0.1),
    
    
    # return NA when the ATA result of MST is NULL
-   if(is.null(x)) return(NA)
+   if(is.null(x)) {
+      
+      # return results
+      res <- list(eos_list=NA, cond_moments=NA, object.fn=list(mrel=NA, ave_csee=NA, max_csee=NA))
+      return(res)
+      
+   }
    
    # read required information from the ATA results
    ata_forms <- x$prm.df
@@ -72,10 +78,10 @@ anal_evalMST <- function(x, route.method=c("AMI", "DPI"), theta=seq(-4, 4, 0.1),
    ave_csee <- objfn(obj="ave.se", var.cond, var.pop=1, w=w, range=c(-2, 2))
    max_csee <- objfn(obj="max.se", var.cond, var.pop=1, w=w, range=c(-2, 2))
    
-   
    # return results
-   list(eos_list=eos_list, cond_moments=cond_moments, 
-        object.fn=list(mrel=mrel, ave_csee=ave_csee, max_csee=max_csee))
+   res <- list(eos_list=eos_list, cond_moments=cond_moments, 
+               object.fn=list(mrel=mrel, ave_csee=ave_csee, max_csee=max_csee))
+   return(res)
    
 }
 
