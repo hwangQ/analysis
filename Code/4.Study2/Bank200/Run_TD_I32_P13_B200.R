@@ -45,7 +45,7 @@ theta <- seq(-4, 4, .1)
 D <- 1.0
 divide.D <- FALSE
 equal.info <- TRUE
-lp.control <- list(timeout=180, epsint=0.1, mip.gap=c(0.1, 0.05))
+lp.control <- list(timeout=180, epsint=0.2, mip.gap=c(0.1, 0.05))
 content1 <- read.csv(paste0("Input/Content_TD_Class1.csv"))
 content2 <- read.csv(paste0("Input/Content_TD_Class2.csv"))
 content <- list(content1[, 2], content2[, 2])
@@ -165,5 +165,11 @@ obj_df <- summary_obj(obj_res, order=1:length(mstTD))
 # save the summary of the results
 write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 
+##----------------------------------------------------------------------------
+# plot test information functions for all routes for each assembled MST
+plot(x = mstTD[[998]], range.theta, D=D)
+
+# plot test information functions for all routes for multiple assembled MSTs
+plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, layout.col=3)
 
 
