@@ -33,7 +33,7 @@ subpop <- function(post, n.stage) {
   if(n.stage ==2) {
     thetas <- list()
     for(i in 1:(length(post) - 1)) {
-      # thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)[2:4]
+      # thetas[[i]] <- seq(post[i], post[i + 1], length.out = 4)[2:3]
       thetas[[i]] <- seq(post[i], post[i + 1], length.out = 5)[3]
     }
   }
@@ -43,14 +43,14 @@ subpop <- function(post, n.stage) {
     for(i in 1:(length(post) - 1)) {
       med[i] <- median(c(post[i], post[i + 1]))
     }
-    post2 <- sort(c(med, post[-c(1, length(post))]))
-    thetas <- as.list(post2)
+    # post2 <- sort(c(med, post[-c(1, length(post))]))
+    # thetas <- as.list(post2)
     
-    #  post2 <- sort(c(post, med))
-    #  thetas <- list()
-    #  for(i in 1:(length(post2) - 2)) {
-    #     thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)[3]
-    #  }
+    post2 <- sort(c(post, med))
+    thetas <- list()
+    for(i in 1:(length(post2) - 2)) {
+      thetas[[i]] <- seq(post2[i], post2[i + 2], length.out = 5)[3]
+    }
   }
   
   # return results
