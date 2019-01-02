@@ -170,6 +170,6 @@ write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 plot(x = mstTD[[1143]], range.theta, D=D)
 
 # plot test information functions for all routes for multiple assembled MSTs
-plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, layout.col=3)
+plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, layout.col=2)
 
 
