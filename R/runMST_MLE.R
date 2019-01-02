@@ -23,9 +23,10 @@ runMST_indvMLE <- function(theta, itemBank, module.mat, ini.module=1, route.map,
    modules <- admin$selected.modules
    responses <- admin$pattern
    test.items <- admin$testItems
+   se <- admin$seFinal
    
    # make a list of results 
-   rr <- list(est.theta=th, true.theta=true.theta, modules=modules, responses=responses)
+   rr <- list(est.theta=th, true.theta=true.theta, modules=modules, responses=responses, se=se)
    
    rr
    
@@ -34,26 +35,27 @@ runMST_indvMLE <- function(theta, itemBank, module.mat, ini.module=1, route.map,
 # a function to administer MST for all examinees using ML estimation
 
 runMST_MLE <- function(theta, item.pool, module.mat, ini.module=1, route.map, cut.mat=NULL, D=1.702, route.scoring="EAP", 
-                        final.scoring="ML", range=c(-4, 4), full.out=TRUE) {
-
+                       final.scoring="ML", range=c(-4, 4), full.out=TRUE) {
+   
    # make sure that true thetas are in a vectoc
    true.theta <- as.numeric(theta)
-
+   
    # create an item bank
    itemBank <- cbind(item.pool[,c("PARAM.1", "PARAM.2", "PARAM.3")], d=rep(1, nrow(item.pool)))
    colnames(itemBank) <- c("a", "b", "c", "d")
    
    # the number of examinees
    nstd <- length(true.theta)
-
+   
    # obtain a panel information using a routing map
    panel.info <- panel_info(route.map)
    pathway <- panel.info$pathway
    n.stage <- panel.info$n.stage
- 
+   
    # make empty cells to contain results
    nitem <- sum(module.mat[, pathway[1, ]])
    est.theta <- rep(NA, nstd)
+   se <- rep(NA, nstd)
    modules <- array(NA, c(nstd, n.stage))
    colnames(modules) <- paste0("stage", 1:n.stage)
    responses <- array(NA, c(nstd, nitem))
@@ -61,34 +63,35 @@ runMST_MLE <- function(theta, item.pool, module.mat, ini.module=1, route.map, cu
    
    # run MAPT for all examinees
    for(i in 1:nstd) {
-       temp <- runMST_indvMLE(true.theta[i], itemBank, module.mat, ini.module=ini.module, route.map, cut.mat, D, 
-                              route.scoring, final.scoring, range)
-       est.theta[i] <- temp$est.theta
-       modules[i, ] <- temp$modules
-       responses[i, ] <- temp$responses
+      temp <- runMST_indvMLE(true.theta[i], itemBank, module.mat, ini.module=ini.module, route.map, cut.mat, D, 
+                             route.scoring, final.scoring, range)
+      est.theta[i] <- temp$est.theta
+      se[i] <- temp$se
+      modules[i, ] <- temp$modules
+      responses[i, ] <- temp$responses
    }
-
+   
    # summary
    score.table <- data.frame(true.theta=theta, est.theta=est.theta)
    if(full.out) {
-      rr <- list(score.table=score.table, modules=modules, responses=responses)
+      rr <- list(score.table=score.table, modules=modules, responses=responses, se=se)
    } else {
-      rr <- list(score.table=score.table)
+      rr <- list(score.table=score.table, se=se)
    }
    
    rr
- 
+   
 }
 
 # a function to administer MST for replications using ML estimation
 runMST_MLErep <- function(nrep, theta, item.pool, module.mat, ini.module=1, route.map, cut.mat=NULL, D, route.scoring="EAP", 
                           final.scoring="ML", range=c(-4, 4), full.out=FALSE, iseed=0L, n.core=3) {
-
+   
    # set the number of cpu cores
    if(n.core > 3) stop("'n.core' must be less than 4.", call.=FALSE)
    left.core <- 4 - n.core
    numCores <- parallel::detectCores() - left.core
-
+   
    # create a parallel processesing cluster
    cl = parallel::makeCluster(numCores, type="PSOCK")
    
@@ -120,13 +123,16 @@ runMST_MLErep <- function(nrep, theta, item.pool, module.mat, ini.module=1, rout
       names(modules) <- paste0("rep.", 1:nrep)
       responses <- lapply(admin, '[[', 3)
       names(responses) <- paste0("rep.", 1:nrep)
+      se <- sapply(admin, '[[', 4)
+   } else {
+      se <- sapply(admin, '[[', 2)
    }
    
    # return results
    if(full.out) {
-      rr <- list(true.theta=true.theta, est.theta=est.theta, modules=modules, responses=responses)
+      rr <- list(true.theta=true.theta, est.theta=est.theta, modules=modules, responses=responses, se=se)
    } else {
-      rr <- list(true.theta=true.theta, est.theta=est.theta)
+      rr <- list(true.theta=true.theta, est.theta=est.theta, se=se)
    }
    
    rr
