@@ -1,3 +1,91 @@
+# This function creates module information functions across stages for all assembled MSTs
+plot_mif <- function(x, which.mst, xlab.text, ylab.text, main.text=NULL, lab.size=15, main.size=15, axis.size=15,
+                     line.color, line.size=1.5, legend.title, legend.text, legend.size=15, legend.position="right", 
+                     strip.size=12) {
+  
+  
+  # select MSTs to be used for a plot
+  obj <- x[which.mst]
+  
+  info_df <- NULL
+  for(i in 1:length(obj)) {
+    
+    # read TIFs for each modules
+    info.mod <- obj[[i]]$info.mod
+    
+    # read theta values
+    theta <- obj[[i]]$theta
+    
+    # read a routing map
+    route.map <- obj[[i]]$metainfo$route.map
+    panel.info <- panel_info(route.map)
+    config.info <- panel.info$config
+    n.module <- panel.info$n.module
+    pathway <- panel.info$pathway
+    n.stage <- length(config.info)
+    
+    # read RDPs
+    post <- obj[[i]]$metainfo$post
+    RDP <- post[-c(1, length(post))]
+    RDP_str <- paste0("MST ", i, ": RDP (", paste(RDP, collapse = ", "), ")") 
+    
+    # create a list of module variables 
+    mod.vals <- unlist(config.info) %>% 
+      as.numeric()
+    mod.vals <- paste0("Module ", mod.vals) %>% 
+      as.list()
+    
+    # create a list of stage variables 
+    stg.vals <- rep(1:n.stage, times=n.module) 
+    stg.vals <- paste0("Stage ", stg.vals) %>% 
+      as.character() %>% 
+      as.list()
+    
+    # create a data.frame being used to draw a plot
+    List <- list(stg.vals, mod.vals, info.mod)
+    mif_df <- purrr::pmap(.l=List, .f=function(x, y, z) 
+      data.frame(Stage=x, Module=y, Info=z, theta=theta, stringsAsFactors = FALSE)) %>% 
+      dplyr::bind_rows()
+    mif_df$RDP <- RDP_str
+    
+    # rbind of information data.frame
+    info_df <- rbind(info_df, mif_df)
+    
+  }
+  
+  # Set plot conditions
+  if(missing(xlab.text)) xlab.text <- expression(theta)
+  if(missing(ylab.text)) ylab.text <- 'Module Information'
+  if(missing(line.color)) {
+    line.color <-  c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+    # line.color <- brewer.pal(n = 9, name = "Greys")[3:9]
+  } else {
+    line.color <- line.color
+  }
+  if(missing(legend.title)) legend.title <- "Module"
+  if(missing(legend.text)) legend.text <- unlist(mod.vals)
+  
+  # draw a plot
+  p <- info_df %>% 
+    ggplot(mapping=aes_string(x="theta", y="Info", color="Module")) +
+    geom_line(size=line.size) +
+    labs(title = main.text, x = xlab.text, y = ylab.text) +
+    theme_bw() +  
+    facet_grid(Stage ~ RDP) +
+    theme(plot.title = element_text(size=main.size),
+          axis.title = element_text(size=lab.size),
+          axis.text = element_text(size=axis.size)) +
+    theme(legend.title = element_text(size=legend.size),
+          legend.text = element_text(size=legend.size),
+          legend.position = legend.position) +
+    theme(strip.text.x = element_text(size = strip.size, face = 'bold'),
+          strip.text.y = element_text(size = strip.size, face = 'bold')) +
+    scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
+  
+  p  
+  
+  
+}
 
 # This function draws plots for CSEE or Bias under Study 1
 plot_study1 <- function(x, x.var="theta", y.var=c("CSEE", "Bias"), point.size=1.5, line.size=0.8, 
@@ -13,12 +101,12 @@ plot_study1 <- function(x, x.var="theta", y.var=c("CSEE", "Bias"), point.size=1.
       geom_line(mapping=aes_string(color="Method"), size=line.size) +
       # geom_line(mapping=aes_string(linetype="Method"), size=0.8) + 
       labs(x = expression(theta), y = ylab) +
+      theme_bw() +
+      facet_grid(Length ~ Panel) +
       theme(axis.title = element_text(size=lab.size),
             axis.text = element_text(size=axis.size)) +
       theme(legend.title = element_text(size=legend.size),
             legend.text = element_text(size=legend.size)) +
-      theme_bw() +
-      facet_grid(Length ~ Panel) +
       theme(strip.text.x = element_text(size = strip.size, face = 'bold'),
             strip.text.y = element_text(size = strip.size, face = 'bold'))
   } else {
@@ -29,12 +117,12 @@ plot_study1 <- function(x, x.var="theta", y.var=c("CSEE", "Bias"), point.size=1.
       # geom_line(mapping=aes_string(linetype="Method"), size=0.8) + 
       labs(x = expression(theta), y = ylab) +
       ylim(ylim[1], ylim[2]) +
+      theme_bw() +
+      facet_grid(Length ~ Panel) +
       theme(axis.title = element_text(size=lab.size),
             axis.text = element_text(size=axis.size)) +
       theme(legend.title = element_text(size=legend.size),
             legend.text = element_text(size=legend.size)) +
-      theme_bw() +
-      facet_grid(Length ~ Panel) +
       theme(strip.text.x = element_text(size = strip.size, face = 'bold'),
             strip.text.y = element_text(size = strip.size, face = 'bold'))
   }
@@ -71,13 +159,13 @@ plot_csee <- function(cond_moments, which.mst, RDP_mat, xlab.text, ylab.text, ma
     geom_line(mapping=aes_string(color="MST"), size=line.size) +
     labs(title = main.text, x = xlab.text, y = ylab.text) +
     ylim(ylim[1], ylim[2]) +
+    theme_bw() +
     theme(plot.title = element_text(size=main.size),
           axis.title = element_text(size=lab.size),
           axis.text = element_text(size=axis.size)) +
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
-          legend.position = legend.position) +
-    theme_bw()
+          legend.position = legend.position)
   
   p
   
@@ -149,14 +237,14 @@ plot.list <- function(x, which.mst, range.theta=c(-5, 5), D=1, xlab.text, ylab.t
     ggplot(mapping=aes_string(x="theta", y="info")) +
     geom_line(mapping=aes_string(color="Routes"), size=line.size) +
     labs(title = main.text, x = xlab.text, y = ylab.text) +
+    theme_bw() +
+    facet_wrap(~RDP, ncol=layout.col) +
     theme(plot.title = element_text(size=main.size),
           axis.title = element_text(size=lab.size),
           axis.text = element_text(size=axis.size)) +
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
           legend.position = legend.position) +
-    theme_bw() +
-    facet_wrap(~RDP, ncol=layout.col) +
     theme(strip.text.x = element_text(size = strip.size, face = 'bold')) +
     scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
   
@@ -213,13 +301,13 @@ plot.atamst <- function(x, range.theta=c(-5, 5), D=1, xlab.text, ylab.text, main
     ggplot(mapping=aes_string(x="theta", y="info")) +
     geom_line(mapping=aes_string(color="Routes"), size=line.size) +
     labs(title = main.text, x = xlab.text, y = ylab.text) +
+    theme_bw() +
     theme(plot.title = element_text(size=main.size),
           axis.title = element_text(size=lab.size),
           axis.text = element_text(size=axis.size)) +
     theme(legend.title = element_text(size=legend.size),
           legend.text = element_text(size=legend.size),
           legend.position = legend.position) +
-    theme_bw() +
     scale_colour_manual(values=line.color, name = legend.title, labels = legend.text)
   
   p
