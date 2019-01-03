@@ -1,24 +1,43 @@
 # This function summarizes the results of the objective functions in the specified order
-summary_obj <- function(obj_res, order=NULL) {
+summary_obj <- function(obj_res, order=NULL, showRDP=FALSE, RDP_mat=NULL) {
   
-  f <- function(i) {
-    obj_res %>% 
-      dplyr::summarize(max.mrel=sort(mrel, decreasing=TRUE, na.last=TRUE)[i], 
-                       loc.mrel=order(mrel, decreasing=TRUE, na.last=TRUE)[i], 
-                       min.ave=sort(ave_csee, na.last=TRUE)[i], 
-                       loc.ave=order(ave_csee, na.last=TRUE)[i],
-                       min.max=sort(max_csee, na.last=TRUE)[i], 
-                       loc.max=order(max_csee, na.last=TRUE)[i])
+  if(showRDP) {
+    RDP_df <- 
+      as.data.frame(round(RDP_mat, 5)) %>% 
+      tidyr::unite(col=RDP, sep=", ")
+    RDP_df <- data.frame("(", RDP_df, ")") %>% 
+      tidyr::unite(col=RDP, sep="")
+  }
+  
+  f <- function(i, showRDP) {
+    if(!showRDP) {
+      obj_res %>% 
+        dplyr::summarize(mar.rel=sort(mrel, decreasing=TRUE, na.last=TRUE)[i], 
+                         loc.mrel=order(mrel, decreasing=TRUE, na.last=TRUE)[i], 
+                         ave.csee=sort(ave_csee, na.last=TRUE)[i], 
+                         loc.ave=order(ave_csee, na.last=TRUE)[i],
+                         max.csee=sort(max_csee, na.last=TRUE)[i], 
+                         loc.max=order(max_csee, na.last=TRUE)[i])
+    } else {
+      
+      obj_res %>% 
+        dplyr::summarize(mar.rel=sort(mrel, decreasing=TRUE, na.last=TRUE)[i], 
+                         rdp.mrel=RDP_df[order(mrel, decreasing=TRUE, na.last=TRUE)[i], ], 
+                         ave.csee=sort(ave_csee, na.last=TRUE)[i], 
+                         rdp.ave=RDP_df[order(ave_csee, na.last=TRUE)[i], ],
+                         max.csee=sort(max_csee, na.last=TRUE)[i], 
+                         rdp.max=RDP_df[order(max_csee, na.last=TRUE)[i], ])   
+    }
   }
   
   if(is.null(order)) {
     
-    res <- f(1)
+    res <- f(1, showRDP, order=NULL, showRDP)
     res$order <- 1
     
   } else {
     
-    res <- purrr::map_df(order, f)
+    res <- purrr::map_df(order, f, showRDP=showRDP)
     res$order <- order
     
   }
