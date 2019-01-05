@@ -1,3 +1,58 @@
+# This function creates a table for a parition of contents
+content_table <- function(x, which.mst, mod.name=NULL) {
+  
+  # select MSTs to be used to create a table
+  obj <-x[which.mst]   
+  
+  # a function to create a talbe for one MST
+  f <- function(dat, mod.name=NULL) {
+    
+    # read RDPs
+    post <- dat$metainfo$post
+    RDP <- post[-c(1, length(post))]
+    RDP_str <- paste0("RDP (", paste(RDP, collapse = ", "), ")") 
+    
+    # read prm.df
+    prm_df <- dat$prm.df
+    
+    # check the number of modules
+    nmod <- length(prm_df)
+    
+    # creat a table
+    table_df <- data.frame()
+    for(i in seq_len(nmod)) {
+      N <- nrow(prm_df[[i]])
+      cont1 <- table(factor(prm_df[[i]]$CLASS1, levels=1:4)) %>% 
+        matrix(nrow=1)
+      cont2 <- table(factor(prm_df[[i]]$CLASS2, levels=1:3)) %>% 
+        matrix(nrow=1)
+      tmp_df <- cbind(N, cont1, cont2) %>% 
+        data.frame()
+      table_df <- rbind(table_df, tmp_df)
+    }
+    
+    if(is.null(mod.name)) {
+      mod.name <- paste0("module.", seq_len(nmod))
+      table_df <- data.frame(mod.name, table_df)
+    } else {
+      table_df <- data.frame(mod.name, table_df)
+    }
+    
+    col.names <- c("Module", "N", paste0("Cont1.", 1:4), paste0("Cont2.", 1:3))
+    colnames(table_df) <- col.names
+    table_df <- data.frame(RDP=RDP_str, table_df, stringsAsFactors = FALSE)
+    
+    table_df
+  } 
+  
+  # creat a table for all MSTs
+  df <- purrr::map_dfr(obj, .f=f, mod.name=mod.name)
+  
+  df
+  
+}
+
+
 # This function summarizes the results of the objective functions in the specified order
 summary_obj <- function(obj_res, order=NULL, showRDP=FALSE, RDP_mat=NULL) {
   
