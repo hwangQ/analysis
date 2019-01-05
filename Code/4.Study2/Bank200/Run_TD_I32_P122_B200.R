@@ -160,15 +160,38 @@ saveRDS(obj_res, file=file.path(dir_out, "obj_res.rds"))
 ##----------------------------------------------------------------------------
 # summarize the results of objective functions in a specified order
 obj_df <- summary_obj(obj_res, order=1:length(mstTD))
+objRDP_df <- summary_obj(obj_res, order=1:length(mstTD), showRDP=TRUE, RDP_mat=RDP_mat)
 
 # save the summary of the results
 write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
+write.csv(objRDP_df, file.path(dir_out, "objRDP_df.csv"))
+
+# check the partion of contents
+content_df <- content_table(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], mod.name=c("1M", "2E", "2H", "3E", "3H")) 
+write.csv(content_df, file.path(dir_out, "content_df.csv"))
 
 ##----------------------------------------------------------------------------
 # plot test information functions for all routes for each assembled MST
-plot(x = mstTD[[32]], range.theta, D=D)
+plot(x = mstTD[[32]], ylab.text = "Information", range.theta, D=D, 
+     legend.text=c("1M-2E-3E", "1M-2E-3H", "1M-2H-3E", "1M-2H-3H"))
 
 # plot test information functions for all routes for multiple assembled MSTs
-plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, layout.col=2)
+plot(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], range.theta, D, 
+     ylab.text = "Information",
+     legend.text=c("1M-2E-3E", "1M-2E-3H", "1M-2H-3E", "1M-2H-3H"), 
+     legend.size=15, legend.position="right", strip.size=12,
+     layout.col=2)
+
+# plot test information functions across stages for multiple assembled MSTs
+plot_mif(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], 
+         ylab.text = "Information",
+         line.size=1.5, 
+         legend.text=c("1M", "2E", "2H", "3E", "3H"), 
+         legend.size=15, legend.position="right", strip.size=12) 
+
+# plot CSEEs
+plot_csee(cond_moments, which.mst=obj_df$loc.mre[c(1:4)], RDP_mat, 
+          ylab.text = "Standard Error",
+          lab.size=15, axis.size=15, line.size=1.5, legend.size=15, legend.position="right")
 
 
