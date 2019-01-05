@@ -167,6 +167,10 @@ objRDP_df <- summary_obj(obj_res, order=1:length(mstTD), showRDP=TRUE, RDP_mat=R
 write.csv(obj_df, file.path(dir_out, "obj_df.csv"))
 write.csv(objRDP_df, file.path(dir_out, "objRDP_df.csv"))
 
+# check the partion of contents
+content_df <- content_table(x=mstTD, which.mst=obj_df$loc.mre[c(1:4)], mod.name=c("1M", "2E", "2H", "3E", "3H")) 
+write.csv(content_df, file.path(dir_out, "content_df.csv"))
+
 # plot test information functions for all routes for each assembled MST
 plot(x = mstTD[[54]], range.theta, D=D)
 
