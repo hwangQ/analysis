@@ -60,8 +60,8 @@ summary_obj <- function(obj_res, order=NULL, showRDP=FALSE, RDP_mat=NULL) {
     RDP_df <- 
       as.data.frame(round(RDP_mat, 5)) %>% 
       tidyr::unite(col=RDP, sep=", ")
-    RDP_df <- data.frame("(", RDP_df, ")") %>% 
-      tidyr::unite(col=RDP, sep="")
+    # RDP_df <- data.frame("(", RDP_df, ")") %>% 
+    #   tidyr::unite(col=RDP, sep="")
   }
   
   f <- function(i, showRDP) {
